@@ -48,7 +48,7 @@ PR_PLAN_ISSUE_BODY_LIMIT = 1500
 
 # ---- Search windows (days) ----
 RECENT_ISSUES_DAYS = 90
-
+ASSIGNED_ISSUE_STALE_DAYS = 60
 # ---- repo_health scoring ----
 # Activity recency (days ago -> score points)
 HEALTH_PUSH_DAYS_RECENT = 7

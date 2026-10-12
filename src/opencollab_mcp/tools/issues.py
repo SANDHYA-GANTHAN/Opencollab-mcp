@@ -7,7 +7,12 @@ import json
 
 from mcp.server.mcpserver import MCPServer
 
-from ..constants import BLOCKING_ISSUE_LABELS, PR_PLAN_ISSUE_BODY_LIMIT, WARNING_ISSUE_LABELS
+from ..constants import (
+    ASSIGNED_ISSUE_STALE_DAYS,
+    BLOCKING_ISSUE_LABELS,
+    PR_PLAN_ISSUE_BODY_LIMIT,
+    WARNING_ISSUE_LABELS,
+)
 from ..github_client import github_get, handle_github_error
 from ..helpers import days_ago, decode_base64_content, parse_issue_number, truncate
 from ..models import IssueInput
@@ -68,10 +73,23 @@ def register(mcp: MCPServer) -> None:
 
         assignees = [a.get("login", "") for a in issue.get("assignees", [])]
         if assignees:
+            last_activity_days = days_ago(issue.get("updated_at"))
+            reason = f"Already assigned to: {', '.join(assignees)}"
+
+            if (
+                last_activity_days is not None
+                and last_activity_days >= ASSIGNED_ISSUE_STALE_DAYS
+            ):
+                reason += (
+                    f", but no activity for {last_activity_days} days — "
+                    "consider politely asking whether it is still being worked on"
+        )
+
             return json.dumps({
                 "available": False,
-                "reason": f"Already assigned to: {', '.join(assignees)}",
+                "reason": reason,
                 "issue_title": issue.get("title", ""),
+                "last_activity_days_ago": last_activity_days,
             }, indent=2)
 
         if issue.get("locked"):
